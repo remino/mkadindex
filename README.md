@@ -28,3 +28,10 @@ OPTIONS:
 	-v        Show script name and version number.
 
 ```
+
+## Install via Homebrew
+
+```sh
+brew tap remino/remino
+brew install remino/remino/mkdldir
+```
