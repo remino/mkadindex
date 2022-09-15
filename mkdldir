@@ -1,7 +1,8 @@
 #!/bin/sh
 # mkdldir
+# https://github.com/remino/mkdldir
 
-VERSION='1.0.0'
+VERSION='1.1.0'
 
 mkdldir_main() {
 	trap _exit INT TERM
