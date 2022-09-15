@@ -209,7 +209,9 @@ table {
 }
 
 td, th {
+	min-width: 10rem;
 	padding: 0.25rem 0.5rem;
+	white-space: nowrap;
 }
 
 td.indexcolname a {
@@ -229,8 +231,16 @@ th a {
 	display: none;
 }
 
+.indexcolicon {
+	min-width: 0;
+}
+
 .indexhead {
 	border-bottom: 1px solid var(--fg-color);
+}
+
+.table-container {
+	overflow-x: auto;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -267,8 +277,9 @@ _htdigest() {
 
 _html_footer() {
 cat <<HTML
-</main>
-</body>
+			</div>
+		</main>
+	</body>
 </html>
 HTML
 }
@@ -277,14 +288,16 @@ _html_header() {
 cat <<HTML
 <!DOCTYPE html>
 <html>
-<head>
-<meta charset="utf-8">
-<title>$title</title>
-<link rel="stylesheet" type="text/css" href="_style.css">
-</head>
-<body>
-<main>
-<h1>$title</h1>
+	<head>
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<meta charset="utf-8">
+		<title>$title</title>
+		<link rel="stylesheet" type="text/css" href="_style.css">
+	</head>
+	<body>
+		<main>
+			<h1>$title</h1>
+			<div class="table-container">
 HTML
 }
 
