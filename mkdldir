@@ -17,19 +17,21 @@ mkdldir_main() {
 
 	htdigest_base=
 	password=
-	realm="Download"
+	private=0
+	realm=
 	title=
 	user="download"
 
-	while getopts a:hp:r:t:u:v opt
+	while getopts a:hip:r:t:u:v opt
 	do
 		case $opt in
 			a) htdigest_base="$OPTARG" ;;
 			h) cmd=help ;;
-			p) password="$OPTARG" ;;
-			r) realm="$OPTARG" ;;
+			i) private=1 ;;
+			p) private=1; password="$OPTARG" ;;
+			r) private=1; realm="$OPTARG" ;;
 			t) title="$OPTARG" ;;
-			u) user="$OPTARG" ;;
+			u) private=1; user="$OPTARG" ;;
 			v) cmd=version ;;
 			*) _invalid_opt ;;
 		esac
@@ -52,12 +54,12 @@ mkdldir_help() {
 cat <<USAGE
 $scriptname $VERSION
 
-USAGE: $scriptinv [-ahprtuv] <outputdir>
+USAGE: $scriptinv [-ahiprtuv] <outputdir>
 
-Create password-protected download directory for Apache.
+Create download directory for Apache HTTP Server.
 
-Directory will be created in <outputdir> and protected using HTTP Digest with
-a pair of .htdigest and .htaccess files.
+Directory will be created in <outputdir>. It can be protected using HTTP Digest
+with a pair of .htdigest and .htaccess files.
 
 OPTIONS:
 
@@ -66,10 +68,13 @@ OPTIONS:
 	          If not specified, will only <outputdir>/.htaccess.
 	          (Note AuthUserFile in .htaccess cannot be relative.)
 	-h        Show this help screen.
-	-p        Specify password for digest authentication. (Required.)
-	-r        Specify realm for digest authentication. (Default: Download)
+	-i        Make directory private by protecting it with HTTP Digest auth.
+	-p        Specify password for digest authentication. Implies -i.
+	-r        Specify realm for digest authentication. Implies -i.
+	          Will use title (-t) if not specified.
 	-t        Specify title for directory. (Default: Download)
-	-u        Specify username for digest password. (Default: download)
+	-u        Specify username for digest password. Implies -i.
+	          (Default: download)
 	-v        Show script name and version number.
 
 USAGE
@@ -79,18 +84,24 @@ mkdldir_process() {
 	[ -z "$1" ] && _missing_arg "outputdir"
 
 	[ -z "$title" ] && title="$1"
+	[ -z "$realm" ] && realm="$title"
 	[ -n "$htdigest_base" ] && htdigest_base="$htdigest_base/"
 	[ -d "$1" ] || mkdir -p "$1"
 
-	htdigest_file="$1/.htdigest"
-	htdigest_path="${htdigest_base}$htdigest_file"
-	echo "$htdigest_path"
+	_htaccess > "$1/.htaccess"
 
-	_htdigest "$realm" "$user" "$password" > "$htdigest_file"
-	_htaccess "$htdigest_path" "$realm" > "$1/.htaccess"
+	if [ $private -ne 0 ]
+	then
+		htdigest_file="$1/.htdigest"
+		htdigest_path="${htdigest_base}$htdigest_file"
+
+		_htdigest "$realm" "$user" "$password" > "$htdigest_file"
+		_htaccess_private "$htdigest_path" "$realm" >> "$1/.htaccess"
+	fi
+
+	_css > "$1/_style.css"
 	_html_header > "$1/_header.html"
 	_html_footer > "$1/_footer.html"
-	_css > "$1/_style.css"
 }
 
 mkdldir_version() {
@@ -118,21 +129,26 @@ _fatal() {
 }
 
 _htaccess() {
-	[ -z "$1" ] && _missing_arg "htdigest_path"
-	[ -z "$2" ] && _missing_arg "realm"
-
 cat <<HTACCESS
-AuthType Digest
-AuthName "$2"
-AuthUserFile "$1"
-Require valid-user
-
 IndexIgnore .. _footer.html _header.html _style.css
-IndexOptions FancyIndexing FoldersFirst HTMLTable IconsAreLinks SuppressHTMLPreamble Charset=UTF-8 
+IndexOptions FancyIndexing FoldersFirst HTMLTable IconsAreLinks SuppressHTMLPreamble Charset=UTF-8
 IndexStyleSheet "_style.css"
 
 HeaderName _header.html
 ReadmeName _footer.html
+HTACCESS
+}
+
+_htaccess_private() {
+	[ -z "$1" ] && _missing_arg "htdigest_path"
+	[ -z "$2" ] && _missing_arg "realm"
+
+cat <<HTACCESS
+
+AuthType Digest
+AuthName "$2"
+AuthUserFile "$1"
+Require valid-user
 HTACCESS
 }
 

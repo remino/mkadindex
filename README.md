@@ -2,14 +2,14 @@ mkdldir
 =======
 
 ```
-mkdldir 1.0.0
+mkdldir 1.1.0
 
-USAGE: mkdldir [-ahprtuv] <outputdir>
+USAGE: mkdldir [-ahiprtuv] <outputdir>
 
-Create password-protected download directory for Apache.
+Create download directory for Apache HTTP Server.
 
-Directory will be created in <outputdir> and protected using HTTP Digest with
-a pair of .htdigest and .htaccess files.
+Directory will be created in <outputdir>. It can be protected using HTTP Digest
+with a pair of .htdigest and .htaccess files.
 
 OPTIONS:
 
@@ -18,11 +18,13 @@ OPTIONS:
 	          If not specified, will only <outputdir>/.htaccess.
 	          (Note AuthUserFile in .htaccess cannot be relative.)
 	-h        Show this help screen.
-	-p        Specify password for digest authentication. (Required.)
-	-r        Specify realm for digest authentication. (Default: Download)
+	-i        Make directory private by protecting it with HTTP Digest auth.
+	-p        Specify password for digest authentication. Implies -i.
+	-r        Specify realm for digest authentication. Implies -i.
+	          Will use title (-t) if not specified.
 	-t        Specify title for directory. (Default: Download)
-	-u        Specify username for digest password. (Default: download)
+	-u        Specify username for digest password. Implies -i.
+	          (Default: download)
 	-v        Show script name and version number.
 
 ```
-
