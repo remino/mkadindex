@@ -131,7 +131,7 @@ _fatal() {
 _htaccess() {
 cat <<HTACCESS
 IndexIgnore .. _footer.html _header.html _style.css
-IndexOptions FancyIndexing FoldersFirst HTMLTable IconsAreLinks SuppressHTMLPreamble Charset=UTF-8
+IndexOptions DescriptionWidth=* FancyIndexing FoldersFirst HTMLTable IconsAreLinks NameWidth=* SuppressHTMLPreamble Charset=UTF-8
 IndexStyleSheet "_style.css"
 
 HeaderName _header.html
@@ -161,6 +161,7 @@ cat <<CSS
 	--link-color-visited: #00b;
 	--link-color-hover: #00b;
 	--link-color-active: #008;
+	--max-width: 50rem;
 }
 
 a {
@@ -189,29 +190,38 @@ body {
 	font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
 	font-size: 1em;
 	line-height: 1.6;
-	margin: 2em;
+	margin: 0;
 	padding: 0;
 }
 
 h1 {
 	font-size: 1.6em;
 	margin: 2rem 0;
+	padding: 0 2rem;
 }
 
 main {
 	margin: 0 auto;
-	max-width: 50rem
+	max-width: var(--max-width);
 }
 
 table {
 	border-collapse: collapse;
+	margin: 0 0 2rem;
+	max-width: var(--max-width);
 	width: 100%;
 }
 
+td, td a, th, th a {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
 td, th {
+	max-width: 20rem;
 	min-width: 10rem;
 	padding: 0.25rem 0.5rem;
-	white-space: nowrap;
 }
 
 td.indexcolname a {
@@ -231,8 +241,17 @@ th a {
 	display: none;
 }
 
-.indexcolicon {
+.indexcoldesc,
+.indexcolicon,
+.indexcollastmod,
+.indexcolsize {
 	min-width: 0;
+}
+
+.indexcolicon,
+.indexcollastmod,
+.indexcolsize {
+	width: max-content;
 }
 
 .indexhead {
@@ -240,7 +259,9 @@ th a {
 }
 
 .table-container {
+	box-sizing: border-box;
 	overflow-x: auto;
+	padding: 0 2rem;
 }
 
 @media (prefers-color-scheme: dark) {
