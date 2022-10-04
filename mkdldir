@@ -17,13 +17,14 @@ mkdldir_main() {
 	scriptname="$( basename "$scriptpath" )"
 
 	htdigest_base=
+	show_password=0
 	password=
 	private=0
 	realm=
 	title=
 	user="download"
 
-	while getopts a:hip:r:t:u:v opt
+	while getopts a:hip:r:st:u:v opt
 	do
 		case $opt in
 			a) htdigest_base="$OPTARG" ;;
@@ -31,6 +32,7 @@ mkdldir_main() {
 			i) private=1 ;;
 			p) private=1; password="$OPTARG" ;;
 			r) private=1; realm="$OPTARG" ;;
+			s) show_password=1 ;;
 			t) title="$OPTARG" ;;
 			u) private=1; user="$OPTARG" ;;
 			v) cmd=version ;;
@@ -62,6 +64,9 @@ Create download directory for Apache HTTP Server.
 Directory will be created in <outputdir>. It can be protected using HTTP Digest
 with a pair of .htdigest and .htaccess files.
 
+Outputs the path to the created directory and, if the directory is private,
+the credentials to access it (user:realm:password) via HTTP on an Apache server.
+
 OPTIONS:
 
 	-a        Specify absolute path base to .htdigest file to use.
@@ -73,6 +78,7 @@ OPTIONS:
 	-p        Specify password for digest authentication. Implies -i.
 	-r        Specify realm for digest authentication. Implies -i.
 	          Will use title (-t) if not specified.
+	-s        Show password on report.
 	-t        Specify title for directory. (Default: Download)
 	-u        Specify username for digest password. Implies -i.
 	          (Default: download)
@@ -103,6 +109,10 @@ mkdldir_process() {
 	_css > "$1/_style.css"
 	_html_header > "$1/_header.html"
 	_html_footer > "$1/_footer.html"
+
+	visible_password="$( ( [ $show_password -ne 0 ] && _echo "$password" ) || _echo '********' )"
+	visible_creds="$( ( [ $private -ne 0 ] && _echo " $user:$realm:$visible_password" ) || _echo '' )"
+	_echo "$1$visible_creds"
 }
 
 mkdldir_version() {
