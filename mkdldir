@@ -64,8 +64,12 @@ Create download directory for Apache HTTP Server.
 Directory will be created in <outputdir>. It can be protected using HTTP Digest
 with a pair of .htdigest and .htaccess files.
 
-Outputs the path to the created directory and, if the directory is private,
-the credentials to access it (user:realm:password) via HTTP on an Apache server.
+Outputs the credentials to access the created directory (user:realm:password)
+via HTTP on an Apache server, if it is protected. Otherwise, only display a
+hyphen. Followed by the path to the created directory:
+
+	<user>:<realm>:<password> <outputdir>
+	- <outputdir>
 
 OPTIONS:
 
@@ -111,8 +115,8 @@ mkdldir_process() {
 	_html_footer > "$1/_footer.html"
 
 	visible_password="$( ( [ $show_password -ne 0 ] && _echo "$password" ) || _echo '********' )"
-	visible_creds="$( ( [ $private -ne 0 ] && _echo " $user:$realm:$visible_password" ) || _echo '' )"
-	_echo "$1$visible_creds"
+	visible_creds="$( ( [ $private -ne 0 ] && _echo "$user:$realm:$visible_password " ) || _echo '- ' )"
+	_echo "$visible_creds$1"
 }
 
 mkdldir_version() {
