@@ -16,6 +16,7 @@ mkdldir_main() {
 	scriptpath="$( realpath "$0" )"
 	scriptname="$( basename "$scriptpath" )"
 
+	generate_password=0
 	htdigest_base=
 	show_password=0
 	password=
@@ -24,10 +25,11 @@ mkdldir_main() {
 	title=
 	user="download"
 
-	while getopts a:hip:r:st:u:v opt
+	while getopts a:ghip:r:st:u:v opt
 	do
 		case $opt in
 			a) htdigest_base="$OPTARG" ;;
+			g) private=1; show_password=1; generate_password=1 ;;
 			h) cmd=help ;;
 			i) private=1 ;;
 			p) private=1; password="$OPTARG" ;;
@@ -77,6 +79,7 @@ OPTIONS:
 	          Path will become <pathbase>/<outputdir>/.htdigest.
 	          If not specified, will only <outputdir>/.htdigest.
 	          (Note AuthUserFile in .htdigest cannot be relative.)
+	-g        Generate random password. Implies -i and -s.
 	-h        Show this help screen.
 	-i        Make directory private by protecting it with HTTP Digest auth.
 	-p        Specify password for digest authentication. Implies -i.
@@ -300,7 +303,12 @@ _htdigest() {
 
 	if [ -z "$password" ]
 	then
-		password="$( _password )"
+		if [ $generate_password -ne 0 ]
+		then
+			password="$( _password_generate )"
+		else
+			password="$( _password_input )"
+		fi
 	fi
 
 	digest="$(
@@ -355,7 +363,7 @@ _missing_arg() {
 	_fatal $e_args "Missing argument: $1. See '$scriptinv -h' for details."
 }
 
-_password() {
+_password_input() {
 	exec < /dev/tty || exit
 
 	tty_settings=$(stty -g) || exit
@@ -373,6 +381,28 @@ _password() {
 
 	printf '%s' "$password"
 	return "$ret"
+}
+
+_password_generate() {
+	newpwd=
+
+	while ! _password_valid "$newpwd"
+	do
+		newpwd="$( < /dev/urandom LC_ALL=C tr -dc A-Za-z0-9 | head -c 8 )"
+	done
+
+	echo "$newpwd"
+}
+
+_password_valid() {
+	[ -z "$1" ] && return 1
+
+	for pattern in '^.{8,}$' '[a-z]' '[A-Z]' '[0-9]'
+	do
+		( ! ( echo "$1" | grep -Eq "$pattern" ) ) && return 1
+	done
+
+	return 0
 }
 
 _require() {
