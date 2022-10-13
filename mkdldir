@@ -126,50 +126,6 @@ mkdldir_version() {
 	_echo "$scriptname $VERSION"
 }
 
-_echo() {
-	echo "$@"
-}
-
-_error() {
-	_echo "$@" >&2
-}
-
-_exit() {
-	exit_code=$?
-	exit $exit_code
-}
-
-_fatal() {
-	exit_code="$1"
-	shift
-	_error "$@"
-	exit "$exit_code"
-}
-
-_htaccess() {
-cat <<HTACCESS
-IndexIgnore .. _footer.html _header.html _style.css
-IndexOptions DescriptionWidth=* FancyIndexing FoldersFirst HTMLTable IconsAreLinks NameWidth=* SuppressHTMLPreamble Charset=UTF-8
-IndexStyleSheet "_style.css"
-
-HeaderName _header.html
-ReadmeName _footer.html
-HTACCESS
-}
-
-_htaccess_private() {
-	[ -z "$1" ] && _missing_arg "htdigest_path"
-	[ -z "$2" ] && _missing_arg "realm"
-
-cat <<HTACCESS
-
-AuthType Digest
-AuthName "$2"
-AuthUserFile "$1"
-Require valid-user
-HTACCESS
-}
-
 _css() {
 cat <<CSS
 :root {
@@ -293,6 +249,50 @@ th a {
 	}
 }
 CSS
+}
+
+_echo() {
+	echo "$@"
+}
+
+_error() {
+	_echo "$@" >&2
+}
+
+_exit() {
+	exit_code=$?
+	exit $exit_code
+}
+
+_fatal() {
+	exit_code="$1"
+	shift
+	_error "$@"
+	exit "$exit_code"
+}
+
+_htaccess() {
+cat <<HTACCESS
+IndexIgnore .. _footer.html _header.html _style.css
+IndexOptions DescriptionWidth=* FancyIndexing FoldersFirst HTMLTable IconsAreLinks NameWidth=* SuppressHTMLPreamble Charset=UTF-8
+IndexStyleSheet "_style.css"
+
+HeaderName _header.html
+ReadmeName _footer.html
+HTACCESS
+}
+
+_htaccess_private() {
+	[ -z "$1" ] && _missing_arg "htdigest_path"
+	[ -z "$2" ] && _missing_arg "realm"
+
+cat <<HTACCESS
+
+AuthType Digest
+AuthName "$2"
+AuthUserFile "$1"
+Require valid-user
+HTACCESS
 }
 
 _htdigest() {
