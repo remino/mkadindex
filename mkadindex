@@ -1,0 +1,293 @@
+#!/bin/sh
+# mkadindex
+# https://github.com/remino/mkadindex
+
+VERSION='1.0.0'
+
+mkadindex_main() {
+	trap _exit INT TERM
+
+	e_args=16
+
+	scriptinv="$( basename "$0" )"
+	scriptpath="$( readlink -f "$0" )"
+	scriptname="$( basename "$scriptpath" )"
+
+	clear_htaccess=0
+	title=
+
+	while getopts cht:v opt
+	do
+		case $opt in
+			c) clear_htaccess=1 ;;
+			h) cmd=help ;;
+			t) title="$OPTARG" ;;
+			v) cmd=version ;;
+			*) _invalid_opt ;;
+		esac
+	done
+
+	shift "$(( OPTIND - 1 ))"
+
+	[ -z "$cmd" ] && cmd="generate"
+
+	case "$cmd" in
+		help|generate|version) "mkadindex_$cmd" "$@" ;;
+		*) _invalid_cmd ;;
+	esac
+
+	_exit
+}
+
+mkadindex_help() {
+cat <<USAGE
+$scriptname $VERSION
+
+USAGE: $scriptinv [<options>] [<outputdir>]
+
+Create .htaccess file for Apache HTTPd to show a stylised directory index.
+
+Will output to current directory if no outputdir is specified.
+
+OPTIONS:
+
+	-c        Clear .htaccess file if it exists.
+	-h        Show this help screen.
+	-t        Specify title for directory. (Default: Download)
+	-v        Show script name and version number.
+
+USAGE
+}
+
+mkadindex_generate() {
+	outputdir="$1"
+	[ -z "$1" ] && outputdir=""
+	[ -n "$outputdir" ] && outputdir="$( echo "$outputdir" | sed -E 's/\/$//' )/"
+
+	[ -z "$title" ] && title="$1"
+	[ -d "$outputdir" ] || [ -n "$outputdir" ] && mkdir -p "$outputdir"
+
+	[ $clear_htaccess -ne 0 ] && printf '' > "${outputdir}.htaccess"
+
+	htaccess_path="${outputdir}.htaccess"
+	css_path="${outputdir}_style.css"
+	html_header_path="${outputdir}_header.html"
+	html_footer_path="${outputdir}_footer.html"
+
+	_htaccess >> "$htaccess_path"
+	_css > "$css_path"
+	_html_header > "$html_header_path"
+	_html_footer > "$html_footer_path"
+
+	_echo "$htaccess_path"
+	_echo "$css_path"
+	_echo "$html_header_path"
+	_echo "$html_footer_path"
+}
+
+mkadindex_version() {
+	_echo "$scriptname $VERSION"
+}
+
+_css() {
+cat <<CSS
+:root {
+	--bg-color: #fff;
+	--fg-color: #000;
+	--link-color: #00f;
+	--link-color-visited: #00b;
+	--link-color-hover: #00b;
+	--link-color-active: #008;
+	--max-width: 50rem;
+}
+
+a {
+	color: var(--link-color);
+	text-decoration: none;
+}
+
+a:hover {
+	color: var(--link-color-hover);
+	text-decoration: underline;
+}
+
+a:active {
+	color: var(--link-color-active);
+	text-decoration: underline;
+}
+
+a:visited {
+	color: var(--link-color-visited);
+	text-decoration: none;
+}
+
+body {
+	background-color: var(--bg-color);
+	color: var(--fg-color);
+	font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+	font-size: 1em;
+	line-height: 1.6;
+	margin: 0;
+	padding: 0;
+}
+
+h1 {
+	font-size: 1.6em;
+	margin: 2rem 0;
+	padding: 0 2rem;
+}
+
+main {
+	margin: 0 auto;
+	max-width: var(--max-width);
+}
+
+table {
+	border-collapse: collapse;
+	margin: 0 0 2rem;
+	max-width: var(--max-width);
+	width: 100%;
+}
+
+td, td a, th, th a {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+td, th {
+	max-width: 20rem;
+	min-width: 10rem;
+	padding: 0.25rem 0.5rem;
+}
+
+td.indexcolname a {
+	display: block;
+}
+
+th {
+	text-align: left;
+}
+
+th a {
+	color: var(--fg-color);
+	display: block;
+}
+
+.indexbreakrow {
+	display: none;
+}
+
+.indexcoldesc,
+.indexcolicon,
+.indexcollastmod,
+.indexcolsize {
+	min-width: 0;
+}
+
+.indexcolicon,
+.indexcollastmod,
+.indexcolsize {
+	width: max-content;
+}
+
+.indexhead {
+	border-bottom: 1px solid var(--fg-color);
+}
+
+.table-container {
+	box-sizing: border-box;
+	overflow-x: auto;
+	padding: 0 2rem;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root {
+		--bg-color: #222;
+		--fg-color: #fff;
+		--link-color: #ccf;
+		--link-color-visited: #99b;
+		--link-color-hover: #99b;
+		--link-color-active: #995;
+	}
+}
+CSS
+}
+
+_echo() {
+	echo "$@"
+}
+
+_error() {
+	_echo "$@" >&2
+}
+
+_exit() {
+	exit_code=$?
+	exit $exit_code
+}
+
+_fatal() {
+	exit_code="$1"
+	shift
+	_error "$@"
+	exit "$exit_code"
+}
+
+_htaccess() {
+cat <<HTACCESS
+IndexIgnore .. _footer.html _header.html _style.css
+IndexOptions DescriptionWidth=* FancyIndexing FoldersFirst HTMLTable IconsAreLinks NameWidth=* SuppressHTMLPreamble Charset=UTF-8
+IndexStyleSheet "_style.css"
+
+HeaderName _header.html
+ReadmeName _footer.html
+
+HTACCESS
+}
+
+_html_footer() {
+cat <<HTML
+			</div>
+		</main>
+	</body>
+</html>
+HTML
+}
+
+_html_header() {
+cat <<HTML
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<meta charset="utf-8">
+		<title>$title</title>
+		<link rel="stylesheet" type="text/css" href="_style.css">
+	</head>
+	<body>
+		<main>
+			<h1>$title</h1>
+			<div class="table-container">
+HTML
+}
+
+_invalid_cmd() {
+	_error "Invalid command: $cmd"
+	_echo
+	mkadindex_help
+	exit $e_args
+}
+
+_invalid_opt() {
+	_error "Invalid option: $opt"
+	_echo
+	mkadindex_help
+	exit $e_args
+}
+
+_missing_arg() {
+	_fatal $e_args "Missing argument: $1. See '$scriptinv -h' for details."
+}
+
+mkadindex_main "$@"
